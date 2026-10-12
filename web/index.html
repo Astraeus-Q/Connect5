@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connect5 · 五子棋 AI 实验室</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark"><span></span><span></span><span></span></div>
+        <div class="brand-text">
+          <h1>Connect5 · 五子棋 AI 实验室</h1>
+          <p>网页对弈 · 对局记录与回放 · 从零训练的策略价值网络</p>
+        </div>
+      </div>
+      <div class="model-badge" id="modelBadge">
+        <span class="dot"></span><span id="modelBadgeText">模型加载中…</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="board-panel">
+        <div class="controls">
+          <div class="seg" id="modeSeg" role="group" aria-label="对战模式">
+            <button type="button" data-mode="pve" class="active">人机对战</button>
+            <button type="button" data-mode="pvp">双人对战</button>
+            <button type="button" data-mode="eva">AI 自对弈</button>
+          </div>
+          <div class="seg" id="oppSeg" role="group" aria-label="AI 类型">
+            <button type="button" data-opp="net" class="active">神经 AI</button>
+            <button type="button" data-opp="heuristic">启发式 AI</button>
+          </div>
+          <div class="seg" id="levelSeg" role="group" aria-label="AI 强度">
+            <button type="button" data-level="easy">简单</button>
+            <button type="button" data-level="normal" class="active">普通</button>
+            <button type="button" data-level="hard">困难</button>
+          </div>
+          <div class="seg" id="colorSeg" role="group" aria-label="我方执子">
+            <button type="button" data-color="1" class="active">我执黑</button>
+            <button type="button" data-color="2">我执白</button>
+          </div>
+          <div class="control-actions">
+            <button type="button" id="btnNew" class="primary">新对局</button>
+            <button type="button" id="btnUndo">悔棋</button>
+            <button type="button" id="btnHint">提示一手</button>
+          </div>
+        </div>
+
+        <div class="status" id="statusBar">
+          <div class="status-left">
+            <span class="turn-stone black" id="turnStone"></span>
+            <span id="statusText">准备开始</span>
+          </div>
+          <div class="status-right">
+            <span class="chip" id="evalChip" hidden>评估 --</span>
+            <span class="chip" id="thinkChip" hidden>搜索 0/0</span>
+          </div>
+        </div>
+
+        <div class="board-wrap">
+          <canvas id="board"></canvas>
+        </div>
+
+        <div class="replay-bar" id="replayBar" hidden>
+          <span class="replay-title" id="replayTitle">回放</span>
+          <button type="button" id="rpFirst">⏮</button>
+          <button type="button" id="rpPrev">◀</button>
+          <button type="button" id="rpPlay">▶ 播放</button>
+          <button type="button" id="rpNext">▶</button>
+          <button type="button" id="rpLast">⏭</button>
+          <span class="replay-step" id="replayStep">0 / 0</span>
+          <button type="button" id="rpExit" class="ghost">退出回放</button>
+        </div>
+      </section>
+
+      <aside class="side">
+        <div class="tabs" id="tabs">
+          <button type="button" data-tab="current" class="active">本局</button>
+          <button type="button" data-tab="history">对局记录</button>
+          <button type="button" data-tab="model">模型</button>
+        </div>
+
+        <section class="tab-panel" id="tabCurrent">
+          <div class="card">
+            <div class="card-head"><h2>AI 分析</h2><span class="muted" id="aiModeText">--</span></div>
+            <div class="eval-row">
+              <div class="eval-bar"><div class="eval-fill" id="evalFill"></div></div>
+              <span class="eval-text" id="evalText">--</span>
+            </div>
+            <div class="kv">
+              <div><span class="k">搜索节点</span><span class="v" id="kvNodes">--</span></div>
+              <div><span class="k">耗时</span><span class="v" id="kvTime">--</span></div>
+            </div>
+            <div class="candidates" id="candidateList"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>着法</h2><span class="muted" id="moveCount">0 手</span></div>
+            <ol class="move-list" id="moveList"></ol>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="tabHistory" hidden>
+          <div class="card">
+            <div class="card-head"><h2>统计</h2></div>
+            <div class="stats" id="statsGrid"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>记录</h2><span class="muted" id="historyCount">0 局</span></div>
+            <div class="btn-row">
+              <button type="button" id="btnExportAll">导出全部</button>
+              <button type="button" id="btnExportTrain">导出训练数据</button>
+              <button type="button" id="btnImport">导入</button>
+              <button type="button" id="btnClear" class="danger">清空</button>
+              <input type="file" id="importFile" accept=".json" hidden />
+            </div>
+            <div class="game-list" id="gameList"></div>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="tabModel" hidden>
+          <div class="card">
+            <div class="card-head"><h2>模型信息</h2></div>
+            <div class="kv vertical" id="modelInfo"></div>
+            <div class="btn-row">
+              <button type="button" id="btnLoadWeight">加载权重文件</button>
+              <input type="file" id="weightFile" accept=".json" hidden />
+            </div>
+            <p class="hint" id="weightHint">
+              默认从 <code>models/weights.json</code> 加载；若通过 <code>file://</code> 打开或文件不存在，
+              可在此手动选择 <code>weights.json</code>（由 <code>ai/export.py</code> 导出）。
+            </p>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>训练与数据闭环</h2></div>
+            <ol class="steps">
+              <li>在网页里对弈，对局自动存入浏览器本地，并可导出为 JSON。</li>
+              <li><code>python ai/import_games.py --input 导出的.json --out data/human.npz</code></li>
+              <li><code>python ai/pipeline.py --iters 7 --games 150</code>（自对弈 → 训练 → 导出）</li>
+              <li>刷新页面即加载最新权重，AI 棋力随之提升。</li>
+            </ol>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script src="js/rules.js"></script>
+  <script src="js/nn.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/board.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

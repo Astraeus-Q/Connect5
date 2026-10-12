@@ -1,0 +1,3 @@
+# 训练五子棋 AI 所需依赖（CPU 版 torch 亦可，去掉 +cu 即可）
+torch>=2.0
+numpy>=1.24

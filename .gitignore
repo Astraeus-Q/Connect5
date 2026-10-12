@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.py[cod]
+
+# 训练产物（可由 pipeline 重新生成）
+train.log
+data/*.npz
+data/*.jsonl
+models/*.pt
+
+# 网页权重是需要随页面一起使用的产物，不忽略
+!web/models/weights.json
+
+.DS_Store
+.idea/
+.vscode/
