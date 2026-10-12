@@ -40,6 +40,8 @@ Connect5/
 
 ## 快速开始
 
+![五子棋网页对弈界面](docs/screenshot.png)
+
 ### 1. 打开网页下棋
 
 ```bash
