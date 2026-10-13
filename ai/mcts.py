@@ -92,6 +92,7 @@ class MCTS:
         dirichlet_eps: float = 0.25,
         heuristic_weight: float = 0.0,
         heuristic_scale: float = 3000.0,
+        amp: bool = False,
     ) -> None:
         self.model = model
         self.device = device or torch.device("cpu")
@@ -103,6 +104,8 @@ class MCTS:
         # 仅用于自对弈：把棋型知识混入叶子价值，让搜索产生更高质量的训练数据
         self.heuristic_weight = heuristic_weight
         self.heuristic_scale = heuristic_scale
+        # 混合精度（仅 CUDA 生效）：GPU 上推理更快
+        self.amp = bool(amp) and self.device.type == "cuda"
 
         self._pending: List[Tuple[Node, List[Tuple[Node, int, Node]]]] = []
         self._root: Optional[Node] = None
@@ -112,7 +115,10 @@ class MCTS:
     def _evaluate(self, nodes: List[Node]) -> Tuple[np.ndarray, np.ndarray]:
         states = np.stack([n.state() for n in nodes])
         x = torch.as_tensor(states, dtype=torch.float32, device=self.device)
-        logits, values = self.model(x)
+        with torch.amp.autocast("cuda", enabled=self.amp):
+            logits, values = self.model(x)
+        logits = logits.float()          # 后续 softmax/mask 在 fp32 下做，避免 fp16 溢出
+        values = values.float()
         legal = (x[:, 0] + x[:, 1]).flatten(1) == 0
         masked = logits.masked_fill(~legal, -1e9)
         pi = torch.softmax(masked, dim=1).cpu().numpy().astype(np.float32)

@@ -172,7 +172,8 @@ python3 train.py --data ../data/iter3.npz ../data/human.npz \
 | 脚本 | 干什么 | 关键参数 |
 | --- | --- | --- |
 | `selfplay.py` | 自对弈产数据 | `--policy mcts/heuristic/random`、`--model`、`--games`、`--sims`、`--workers`、`--seed`、`--out`、`--temp-moves/--temp-final`（温度退火）、`--opening-plies`（开局随机手数）、`--heuristic-value-weight` |
-| `train.py` | 训练 | `--data`（多个文件/目录）、`--init`（继续训练）、`--epochs`、`--lr`、`--batch-size`、`--weight-decay`、`--value-weight`、`--no-augment`、`--cpu`、`--out` |
+| `train.py` | 训练 | `--data`（多个文件/目录）、`--init`（继续训练）、`--epochs`、`--lr`、`--batch-size`、`--weight-decay`、`--value-weight`、`--no-augment`、`--arch`（v1/v2s/v2/v2l）、`--amp`（混合精度）、`--warmup-ratio`、`--cpu`、`--out` |
+| `selfplay.py` | 自对弈 | 见上表，另加 `--device {auto,cpu,cuda}`（GPU 自对弈）、`--batch-size` |
 | `export.py` | 导出网页权重 | `--model`、`--out`、`--iteration`、`--tag` |
 | `evaluate.py` | 对战评估 | `--model`、`--vs random/heuristic/network/mcts`、`--vs-model`、`--kind mcts/network`、`--games`、`--sims`、`--seed` |
 | `import_games.py` | 网页对局 → 训练样本 | `--input`、`--out`、`--winners-only`、`--min-moves` |
@@ -276,18 +277,18 @@ python3 evaluate.py --model ../models/latest.pt --vs heuristic --games 30 --sims
 | `models/latest.pt` | 等于 v1（`train.py` 总会自动更新它，pipeline 靠它做 `--init`） |
 | `web/models/weights.json` | 已导出为 v1（`meta.iteration = 1`） |
 
-**v1 实测成绩**（对手：启发式贪心，30 局，seed=2026）
+**当前最佳：v1.1**（对手：启发式贪心，30 局，seed=2026）
 
-| 难度 | sims | 胜 / 负 / 平 | 得分率 |
+| 难度 | sims | v1 | **v1.1** |
 | --- | --- | --- | --- |
-| 简单 | 16 | 6 / 19 / 5 | **28.3%** |
-| 普通 | 64 | 4 / 19 / 7 | **25.0%** |
-| 困难 | 240 | 4 / 19 / 7 | **25.0%** |
-| vs 随机 | 32 | 10 / 0 / 0 | **100%** |
+| 简单 | 16 | 28.3% | **33.3%** |
+| 普通 | 64 | 25.0% | **36.7%** |
+| 困难 | 240 | 25.0% | **36.7%** |
+| vs 随机 | 32 | 100% | **100%** |
 
-策略 acc **0.536**、policy loss **1.92**、value loss 0.47。
+指标对比（1 万条真实样本实测）：value loss 0.556 → **0.517**，策略 acc 0.398 → **0.416**。
 
-**判断基准**：新模型在**普通档（sims=64，30 局）得分率 > 25.0%** 才值得 `export.py` 覆盖网页权重。
+**判断基准**：新模型在**普通档（sims=64，30 局）得分率 > 36.7%** 才值得 `export.py` 覆盖网页权重。
 注意 30 局仍有 ±5% 噪声（同一模型换 seed 曾测出 21.7% 与 25.0%），接近时换 seed 复测一次再决定。
 
 完整记录见 [MODEL_HISTORY.md](MODEL_HISTORY.md)——每训出一代就往里追加一节。

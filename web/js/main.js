@@ -318,9 +318,10 @@
 
   function evaluateNow() {
     if (!state.net || state.over) return;
+    // 注意：网络输出的是「当前行棋方」视角的价值，渲染时会换算成玩家视角
     const out = state.net.forward(R.encodeState(state.board, state.player));
-    renderEval(out.value, state.mode === 'pve' && state.player === state.humanColor ? '你的胜率' : '当前方胜率');
-    el('aiModeText').textContent = state.net ? '网络直评' : '启发式';
+    renderEval(out.value, state.player, '网络直评');
+    el('aiModeText').textContent = '网络直评';
   }
 
   function renderAnalysis(res) {
@@ -328,17 +329,26 @@
     el('kvNodes').textContent = res.sims ? res.sims + ' 次模拟' : '--';
     el('kvTime').textContent = res.timeMs ? Math.round(res.timeMs) + ' ms' : '--';
     if (res.value !== null && res.value !== undefined) {
-      renderEval(res.value, 'AI 视角胜率');
+      renderEval(res.value, state.player, res.mode === 'mcts' ? 'MCTS 评估' : '战术/规则');
     }
     renderCandidates(res.policy, res.action);
   }
 
-  function renderEval(value, label) {
-    const p = Math.max(0, Math.min(1, (value + 1) / 2));
-    el('evalFill').style.width = (p * 100).toFixed(1) + '%';
-    el('evalText').textContent = `${label} ${(p * 100).toFixed(0)}%`;
+  /**
+   * value 是「mover（当前行棋方）」视角的价值，这里统一换算成玩家视角再显示，
+   * 避免把 AI 的胜率误读成自己的。
+   */
+  function renderEval(value, mover, source) {
+    const pMover = Math.max(0, Math.min(1, (value + 1) / 2));
+    const myColor = state.mode === 'pve' ? state.humanColor : 1;   // 双人/自对弈时以黑方为主视角
+    const pMe = mover === myColor ? pMover : 1 - pMover;
+    const meName = state.mode === 'pve' ? '你' : '黑方';
+    const opName = state.mode === 'pve' ? 'AI' : '白方';
+
+    el('evalFill').style.width = (pMe * 100).toFixed(1) + '%';
+    el('evalText').textContent = `${meName} ${(pMe * 100).toFixed(0)}% · ${opName} ${((1 - pMe) * 100).toFixed(0)}%`;
     el('evalChip').hidden = false;
-    el('evalChip').textContent = `评估 ${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
+    el('evalChip').textContent = `${source || '评估'} ${(pMe * 100).toFixed(0)}%`;
   }
 
   function renderCandidates(policy, action) {

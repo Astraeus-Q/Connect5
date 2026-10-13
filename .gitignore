@@ -3,10 +3,17 @@ __pycache__/
 *.py[cod]
 
 # 训练产物（可由 pipeline 重新生成）
-train.log
+# 训练过程日志不进仓库
+*.log
+
+# 但评估报告是有价值的记录，保留
+!evaluations/*.log
+
 data/*.npz
 data/*.jsonl
 models/*.pt
+# models/v2/ 等子目录里的权重同样忽略（单个最大 10 MB）
+models/**/*.pt
 
 # 网页权重是需要随页面一起使用的产物，不忽略
 !web/models/weights.json

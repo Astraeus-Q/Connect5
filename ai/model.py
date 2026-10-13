@@ -34,16 +34,55 @@ class ConvBN(nn.Module):
         return F.relu(self.bn(self.conv(x)))
 
 
+class ResBlock(nn.Module):
+    """残差块：conv-BN-ReLU-conv-BN + 跳跃连接 + ReLU。
+
+    层数一深就必须有残差，否则梯度传不回去。v1（4 层）不需要，
+    v2（6 个残差块 = 12 层）必须用它。
+    """
+
+    def __init__(self, channels: int) -> None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(channels, channels, 3, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(channels)
+        self.conv2 = nn.Conv2d(channels, channels, 3, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(channels)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        h = F.relu(self.bn1(self.conv1(x)))
+        h = self.bn2(self.conv2(h))
+        return F.relu(h + x)
+
+
 class GomokuNet(nn.Module):
-    def __init__(self, channels: int = 48, n_blocks: int = 4, size: int = BOARD_SIZE, in_channels: int = 3) -> None:
+    """两种形态：
+
+    * ``residual=False``（默认）：v1 的直筒结构，可导出给浏览器（BN 可融合）
+    * ``residual=True``         ：v2 的残差结构，参数量更大，供后端 GPU 推理
+    """
+
+    def __init__(
+        self,
+        channels: int = 48,
+        n_blocks: int = 4,
+        size: int = BOARD_SIZE,
+        in_channels: int = 3,
+        residual: bool = False,
+        value_hidden: int = 64,
+    ) -> None:
         super().__init__()
         self.channels = channels
         self.n_blocks = n_blocks
         self.size = size
         self.in_channels = in_channels
+        self.residual = residual
+        self.value_hidden = value_hidden
 
         self.stem = ConvBN(in_channels, channels, 3)
-        self.blocks = nn.ModuleList([ConvBN(channels, channels, 3) for _ in range(n_blocks)])
+        if residual:
+            self.blocks = nn.ModuleList([ResBlock(channels) for _ in range(n_blocks)])
+        else:
+            self.blocks = nn.ModuleList([ConvBN(channels, channels, 3) for _ in range(n_blocks)])
 
         hidden = size * size
         # policy head
@@ -51,8 +90,8 @@ class GomokuNet(nn.Module):
         self.p_fc = nn.Linear(2 * hidden, hidden)
         # value head
         self.v_conv = ConvBN(channels, 1, 1)
-        self.v_fc1 = nn.Linear(hidden, 64)
-        self.v_fc2 = nn.Linear(64, 1)
+        self.v_fc1 = nn.Linear(hidden, value_hidden)
+        self.v_fc2 = nn.Linear(value_hidden, 1)
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         h = self.stem(x)
@@ -89,7 +128,18 @@ class GomokuNet(nn.Module):
             "channels": self.channels,
             "n_blocks": self.n_blocks,
             "in_channels": self.in_channels,
+            "residual": self.residual,
+            "value_hidden": self.value_hidden,
         }
+
+
+# 预设架构：v1 是浏览器版，v2/v2s 是后端版
+ARCH_PRESETS = {
+    "v1": {"channels": 48, "n_blocks": 4, "residual": False, "value_hidden": 64},
+    "v2s": {"channels": 64, "n_blocks": 5, "residual": True, "value_hidden": 128},
+    "v2": {"channels": 96, "n_blocks": 6, "residual": True, "value_hidden": 256},
+    "v2l": {"channels": 128, "n_blocks": 8, "residual": True, "value_hidden": 256},
+}
 
 
 def pick_device(prefer_gpu: bool = True, min_free_gib: float = 1.5) -> torch.device:
@@ -118,6 +168,8 @@ def build_model(arch: Dict = None, device: torch.device = None) -> GomokuNet:
         n_blocks=int(arch.get("n_blocks", 4)),
         size=int(arch.get("size", BOARD_SIZE)),
         in_channels=int(arch.get("in_channels", 3)),
+        residual=bool(arch.get("residual", False)),
+        value_hidden=int(arch.get("value_hidden", 64)),
     )
     if device is not None:
         model.to(device)
@@ -141,7 +193,15 @@ def _fuse_conv_bn(conv: nn.Conv2d, bn: nn.BatchNorm2d) -> Tuple[np.ndarray, np.n
 
 
 def fused_weights(model: GomokuNet) -> Tuple[Dict, Dict[str, np.ndarray]]:
-    """返回 (arch, 融合后的权重字典)，权重为 float32 numpy 数组。"""
+    """返回 (arch, 融合后的权重字典)，权重为 float32 numpy 数组。
+
+    仅支持非残差结构（v1）——残差结构（v2）用于后端推理，不需要导出到浏览器。
+    """
+    if model.residual:
+        raise ValueError(
+            "残差结构（v2）不支持网页导出；浏览器推理请使用 residual=False 的架构，"
+            "后端版直接用 .pt 加载即可。"
+        )
     weights: Dict[str, np.ndarray] = {}
 
     def put(prefix: str, block: ConvBN) -> None:

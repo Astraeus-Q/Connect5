@@ -105,8 +105,9 @@ def play_one(
 
 
 def _worker(args: Tuple) -> Tuple[List[np.ndarray], List[np.ndarray], List[int], int]:
-    (model_path, seed, kwargs) = args
-    device = torch.device("cpu")
+    (model_path, seed, kwargs, device_str) = args
+    # device_str 为 None 时交给 _device() 自动选择；多进程默认给 "cpu"
+    device = torch.device(device_str) if device_str else _device()
     model = None
     if model_path and os.path.exists(model_path):
         model = load_checkpoint(model_path, device)
@@ -120,9 +121,21 @@ def generate(
     workers: int = 1,
     seed: int = 0,
     verbose: bool = True,
+    device: Optional[torch.device] = None,
     **kwargs,
 ) -> Dict[str, np.ndarray]:
-    tasks = [(model_path, seed + i, kwargs) for i in range(games)]
+    # 显式指定 > 多进程默认 CPU（避免多个 CUDA context 争抢）> 单进程自动选择
+    if device is not None:
+        device_str: Optional[str] = str(device)
+    elif workers > 1:
+        device_str = "cpu"
+    else:
+        device_str = None
+
+    if verbose:
+        print(f"  自对弈设备: {device_str or '自动（单进程）'}", flush=True)
+
+    tasks = [(model_path, seed + i, kwargs, device_str) for i in range(games)]
     all_states: List[np.ndarray] = []
     all_pis: List[np.ndarray] = []
     all_z: List[float] = []
@@ -139,7 +152,7 @@ def generate(
                 if verbose and done % max(1, games // 10) == 0:
                     print(f"  {done}/{games} 局, 样本 {len(all_states)}, {time.time() - t0:.0f}s", flush=True)
     else:
-        device = _device()
+        device = device if device is not None else _device()
         model = None
         if model_path and os.path.exists(model_path):
             model = load_checkpoint(model_path, device)
@@ -231,6 +244,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--heuristic-value-weight", type=float, default=0.0,
                    help="MCTS 叶子价值中棋型知识的权重（0=纯网络，0.5 表示知识增强搜索）")
     p.add_argument("--heuristic-scale", type=float, default=3000.0)
+    p.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "cuda"],
+                   help="自对弈推理设备。cuda 时用 GPU（建议同时把 --batch-size 调大到 32-64）")
     p.add_argument("--opening-plies", type=int, default=2, help="开局随机手数")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--out", type=str, default=os.path.join(root, "data", "selfplay.npz"))
@@ -252,8 +267,14 @@ def main() -> None:
         heuristic_weight=args.heuristic_value_weight,
         heuristic_scale=args.heuristic_scale,
     )
-    print(f"自对弈: {args.games} 局, 策略={args.policy}, sims={args.sims}, workers={args.workers}")
-    data = generate(model_path=args.model, games=args.games, workers=args.workers, seed=args.seed, **kwargs)
+    device = None
+    if args.device == "cpu":
+        device = torch.device("cpu")
+    elif args.device == "cuda":
+        device = torch.device("cuda")
+    print(f"自对弈: {args.games} 局, 策略={args.policy}, sims={args.sims}, workers={args.workers}, device={args.device}")
+    data = generate(model_path=args.model, games=args.games, workers=args.workers, seed=args.seed,
+                    device=device, **kwargs)
     save_dataset(args.out, data)
     print(f"已保存 {len(data['z'])} 条样本 -> {args.out}")
 

@@ -1,3 +1,7 @@
-# 训练五子棋 AI 所需依赖（CPU 版 torch 亦可，去掉 +cu 即可）
+# 训练五子棋 AI 所需依赖
 torch>=2.0
 numpy>=1.24
+
+# 后端推理服务（ai/server.py）需要；只跑纯前端 + 训练可不加
+fastapi>=0.100
+uvicorn>=0.20
