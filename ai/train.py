@@ -236,7 +236,7 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="训练五子棋策略-价值网络")
     p.add_argument("--data", nargs="+", required=True, help="npz/jsonl 文件或目录")
     p.add_argument("--init", type=str, default=None, help="从已有 checkpoint 继续训练")
-    p.add_argument("--out", type=str, default=os.path.join(root, "models", "model.pt"))
+    p.add_argument("--out", type=str, default=os.path.join(root, "models", "v1", "model.pt"))
     p.add_argument("--epochs", type=int, default=4)
     p.add_argument("--batch-size", type=int, default=256)
     p.add_argument("--lr", type=float, default=1e-3)

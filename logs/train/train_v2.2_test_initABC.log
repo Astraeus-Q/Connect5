@@ -1,0 +1,53 @@
+=== A 从头训 09:39:18 ===
+共 3 个数据文件
+  载入 ../data/heur2000.npz: 197889 条
+  载入 ../data/know600.npz: 65140 条
+  载入 ../data/know_v2_400.npz: 58049 条
+样本总数: 321078  (胜方样本占比 0.296, 平均 |z|=0.587)
+模型参数量: 1,160,298
+混合精度(AMP): 开启
+epoch 1/8 39s | policy 4.8343 value 0.5567 acc 0.048 | val policy 3.8521 value 0.5406 acc 0.216 | lr 9.85e-04
+epoch 2/8 38s | policy 3.1447 value 0.5278 acc 0.331 | val policy 2.8182 value 0.5344 acc 0.388 | lr 9.00e-04
+epoch 3/8 39s | policy 2.5937 value 0.5082 acc 0.418 | val policy 2.4924 value 0.5081 acc 0.437 | lr 7.51e-04
+epoch 4/8 38s | policy 2.4227 value 0.4826 acc 0.449 | val policy 2.3729 value 0.4802 acc 0.457 | lr 5.64e-04
+epoch 5/8 39s | policy 2.3285 value 0.4445 acc 0.469 | val policy 2.3127 value 0.4402 acc 0.472 | lr 3.71e-04
+epoch 6/8 39s | policy 2.2638 value 0.3981 acc 0.483 | val policy 2.2475 value 0.3915 acc 0.486 | lr 2.03e-04
+epoch 7/8 39s | policy 2.2185 value 0.3567 acc 0.494 | val policy 2.2180 value 0.3567 acc 0.489 | lr 9.00e-05
+epoch 8/8 39s | policy 2.1919 value 0.3311 acc 0.502 | val policy 2.2006 value 0.3445 acc 0.495 | lr 5.00e-05
+模型已保存: ../models/v2/v3a.pt / /home/pingtaibu_2/work/CodeBuddy/Connect5/models/v2/latest.pt
+=== B 微调v2同强度 09:44:31 ===
+共 3 个数据文件
+  载入 ../data/heur2000.npz: 197889 条
+  载入 ../data/know600.npz: 65140 条
+  载入 ../data/know_v2_400.npz: 58049 条
+样本总数: 321078  (胜方样本占比 0.296, 平均 |z|=0.587)
+模型参数量: 1,160,298
+混合精度(AMP): 开启
+epoch 1/8 40s | policy 2.3306 value 0.4769 acc 0.471 | val policy 2.3515 value 0.4755 acc 0.468 | lr 9.85e-04
+epoch 2/8 39s | policy 2.3193 value 0.4479 acc 0.470 | val policy 2.3247 value 0.4445 acc 0.461 | lr 9.00e-04
+epoch 3/8 39s | policy 2.2712 value 0.4075 acc 0.481 | val policy 2.2554 value 0.3986 acc 0.484 | lr 7.51e-04
+epoch 4/8 39s | policy 2.2274 value 0.3696 acc 0.490 | val policy 2.2158 value 0.3822 acc 0.497 | lr 5.64e-04
+epoch 5/8 39s | policy 2.1821 value 0.3317 acc 0.502 | val policy 2.1584 value 0.3268 acc 0.515 | lr 3.71e-04
+epoch 6/8 39s | policy 2.1427 value 0.2996 acc 0.511 | val policy 2.1331 value 0.3018 acc 0.512 | lr 2.03e-04
+epoch 7/8 39s | policy 2.1104 value 0.2755 acc 0.520 | val policy 2.1085 value 0.2772 acc 0.515 | lr 9.00e-05
+epoch 8/8 39s | policy 2.0929 value 0.2610 acc 0.525 | val policy 2.0931 value 0.2708 acc 0.523 | lr 5.00e-05
+模型已保存: ../models/v2/v3b.pt / /home/pingtaibu_2/work/CodeBuddy/Connect5/models/v2/latest.pt
+=== C 微调v2温和 09:49:46 ===
+共 3 个数据文件
+  载入 ../data/heur2000.npz: 197889 条
+  载入 ../data/know600.npz: 65140 条
+  载入 ../data/know_v2_400.npz: 58049 条
+样本总数: 321078  (胜方样本占比 0.296, 平均 |z|=0.587)
+模型参数量: 1,160,298
+混合精度(AMP): 开启
+epoch 1/5 40s | policy 2.2433 value 0.4592 acc 0.493 | val policy 2.2104 value 0.4512 acc 0.499 | lr 2.83e-04
+epoch 2/5 39s | policy 2.2226 value 0.4209 acc 0.495 | val policy 2.1833 value 0.4162 acc 0.507 | lr 2.15e-04
+epoch 3/5 39s | policy 2.1914 value 0.3812 acc 0.502 | val policy 2.1571 value 0.3862 acc 0.515 | lr 1.22e-04
+epoch 4/5 39s | policy 2.1657 value 0.3474 acc 0.509 | val policy 2.1404 value 0.3484 acc 0.510 | lr 4.50e-05
+epoch 5/5 39s | policy 2.1475 value 0.3264 acc 0.514 | val policy 2.1322 value 0.3403 acc 0.516 | lr 1.50e-05
+模型已保存: ../models/v2/v3c.pt / /home/pingtaibu_2/work/CodeBuddy/Connect5/models/v2/latest.pt
+=== 评估 09:53:04 ===
+v3a: 结果: 胜 89 / 负 348 / 平 63  胜率 0.204  得分率 0.241
+v3b: 结果: 胜 104 / 负 337 / 平 59  胜率 0.236  得分率 0.267
+v3c: 结果: 胜 105 / 负 339 / 平 56  胜率 0.236  得分率 0.266
+=== ALL DONE 09:57:49 ===

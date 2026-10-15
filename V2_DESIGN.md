@@ -92,7 +92,7 @@ FC(450→225) → logits          FC(225→256)+ReLU → FC(256→1) → tanh
 
 ```bash
 cd ai
-python3 server.py --model ../models/v2.pt --sims 400 --port 8000
+python3 server.py --model ../models/v2/v2.pt --sims 400 --port 8000
 # 交互式文档：http://127.0.0.1:8000/docs
 ```
 
@@ -148,7 +148,7 @@ curl -X POST http://127.0.0.1:8000/move \
 
 ```bash
 for s in 64 200 400; do
-  python3 evaluate.py --model ../models/v2.pt --vs heuristic --games 30 --sims $s --seed 2026
+  python3 evaluate.py --model ../models/v2/v2.pt --vs heuristic --games 30 --sims $s --seed 2026
 done
 ```
 
@@ -168,22 +168,22 @@ cd ai
 python3 train.py --arch v2 \
         --data ../data/know600.npz ../data/heur2000.npz \
         --epochs 8 --batch-size 1024 --lr 1e-3 --amp \
-        --out ../models/v2.pt --iteration 20 --tag v2
+        --out ../models/v2/v2.pt --iteration 20 --tag v2
 
 # 对照实验：同样数据训一个 v2l，用 val loss 判断是否过拟合
 python3 train.py --arch v2l \
         --data ../data/know600.npz ../data/heur2000.npz \
         --epochs 8 --batch-size 1024 --lr 1e-3 --amp \
-        --out ../models/v2l.pt --iteration 20 --tag v2l
+        --out ../models/v2/v2l.pt --iteration 20 --tag v2l
 
 # v2 自对弈生成教材（阶段 2）—— 可以搬到 GPU 了
-python3 selfplay.py --model ../models/v2.pt --policy mcts \
+python3 selfplay.py --model ../models/v2/v2.pt --policy mcts \
         --games 400 --workers 12 --sims 128 --seed 30001 \
         --heuristic-value-weight 0.5 --batch-size 32 --device cuda \
         --out ../data/know_v2_400.npz
 
 # 启动后端服务（默认开启混合精度，加 --no-amp 关闭）
-python3 server.py --model ../models/v2.pt --sims 400
+python3 server.py --model ../models/v2/v2.pt --sims 400
 ```
 
 ### 新增的两个开关

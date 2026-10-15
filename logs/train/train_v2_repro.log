@@ -1,0 +1,17 @@
+共 2 个数据文件
+  载入 ../data/know600.npz: 65140 条
+  载入 ../data/heur2000.npz: 197889 条
+样本总数: 263029  (胜方样本占比 0.253, 平均 |z|=0.501)
+模型参数量: 1,160,298
+混合精度(AMP): 开启
+epoch 1/8 32s | policy 4.7233 value 0.4716 acc 0.057 | val policy 3.7837 value 0.4514 acc 0.232 | lr 9.85e-04
+epoch 2/8 32s | policy 2.7553 value 0.4423 acc 0.392 | val policy 2.4041 value 0.4421 acc 0.454 | lr 9.00e-04
+epoch 3/8 33s | policy 2.1409 value 0.4265 acc 0.491 | val policy 2.0986 value 0.4287 acc 0.507 | lr 7.51e-04
+epoch 4/8 33s | policy 1.9418 value 0.4099 acc 0.528 | val policy 2.1096 value 0.4152 acc 0.474 | lr 5.64e-04
+epoch 5/8 35s | policy 1.8375 value 0.3895 acc 0.552 | val policy 1.8356 value 0.3896 acc 0.545 | lr 3.71e-04
+epoch 6/8 36s | policy 1.7642 value 0.3671 acc 0.571 | val policy 1.7591 value 0.3581 acc 0.577 | lr 2.03e-04
+epoch 7/8 37s | policy 1.7161 value 0.3450 acc 0.584 | val policy 1.7220 value 0.3438 acc 0.580 | lr 9.00e-05
+epoch 8/8 36s | policy 1.6919 value 0.3305 acc 0.592 | val policy 1.7189 value 0.3311 acc 0.582 | lr 5.00e-05
+模型已保存: ../models/v2/v2r.pt / /home/pingtaibu_2/work/CodeBuddy/Connect5/models/v2/latest.pt
+v2r: 结果: 胜 114 / 负 340 / 平 46  胜率 0.251  得分率 0.274
+=== DONE 10:29:51 ===

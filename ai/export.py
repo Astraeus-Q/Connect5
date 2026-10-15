@@ -18,7 +18,7 @@ def parse_args() -> argparse.Namespace:
     here = os.path.dirname(os.path.abspath(__file__))
     root = os.path.dirname(here)
     p = argparse.ArgumentParser(description="导出网页端权重")
-    p.add_argument("--model", type=str, default=os.path.join(root, "models", "latest.pt"))
+    p.add_argument("--model", type=str, default=os.path.join(root, "models", "v1", "latest.pt"))
     p.add_argument("--out", type=str, default=os.path.join(root, "web", "models", "weights.json"))
     p.add_argument("--iteration", type=int, default=0)
     p.add_argument("--tag", type=str, default="")

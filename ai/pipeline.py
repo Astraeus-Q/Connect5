@@ -18,7 +18,8 @@ from typing import List
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 DATA_DIR = os.path.join(ROOT, "data")
-MODEL_DIR = os.path.join(ROOT, "models")
+# 默认跑 v1 系列（浏览器版）；训 v2 用 --model-dir ../models/v2
+MODEL_DIR = os.path.join(ROOT, "models", "v1")
 WEB_WEIGHTS = os.path.join(ROOT, "web", "models", "weights.json")
 
 
@@ -55,6 +56,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--eval-games", type=int, default=20, help="每轮评估局数（0 表示跳过）")
     p.add_argument("--eval-sims", type=int, default=64)
     p.add_argument("--extra-data", nargs="*", default=[], help="额外数据（如人类对局 npz、启发式数据）")
+    p.add_argument("--model-dir", type=str, default=MODEL_DIR,
+                   help="模型目录，决定跑哪条线：models/v1（浏览器）或 models/v2（后端）")
     p.add_argument("--heuristic-value-weight", type=float, default=0.0,
                    help="自对弈 MCTS 叶子价值中棋型知识的权重：0=纯网络，0.5=知识增强搜索（数据更强但更慢）")
     p.add_argument("--h-tau-open", type=float, default=90.0, help="冷启动启发式的开局温度")
@@ -64,9 +67,12 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    global MODEL_DIR
     args = parse_args()
+    MODEL_DIR = args.model_dir
     os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(MODEL_DIR, exist_ok=True)
+    print(f"模型目录: {MODEL_DIR}", flush=True)
 
     for it in range(args.start, args.start + args.iters):
         print(f"\n================ 迭代 {it} ================", flush=True)

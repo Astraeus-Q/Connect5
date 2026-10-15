@@ -11,6 +11,10 @@
 
     # 迭代自对弈（使用最新模型 + MCTS）
     python selfplay.py --model ../models/latest.pt --sims 64 --games 200 --out ../data/iter1.npz
+
+    # 让模型与启发式对战产教材（补分布外经验，只收模型方样本）
+    python selfplay.py --model ../models/v2/v2_1.pt --opponent heuristic \
+           --sims 128 --games 1000 --out ../data/vs_heur_1k.npz
 """
 
 from __future__ import annotations
@@ -64,12 +68,23 @@ def play_one(
     tactical: bool = True,
     heuristic_weight: float = 0.0,
     heuristic_scale: float = 3000.0,
+    opponent: Optional[str] = None,
+    model_color: int = 0,
+    keep_model_side: bool = True,
+    opp_tau: float = 0.0,
+    root_noise: bool = True,
 ) -> Tuple[List[np.ndarray], List[np.ndarray], List[int], int]:
-    """自对弈一局，返回 (states, pis, players, winner)。"""
+    """下完一局，返回 (states, pis, players, winner)。
+
+    opponent=None 时为自对弈；指定 "heuristic" 时由模型执 model_color 方、
+    启发式执另一方，用于产出「对战外部风格」的教材。
+    """
     rng = np.random.default_rng(seed)
     game = Gomoku()
     if opening_plies > 0:
         random_opening(game, rng, opening_plies)
+    if opponent is not None and model_color not in (1, 2):
+        model_color = 1
 
     mcts = None
     if model is not None and policy == "mcts":
@@ -81,21 +96,32 @@ def play_one(
     players: List[int] = []
 
     while not game.finished and game.move_count < max_moves:
+        # 该谁走时由模型（MCTS）出手；自对弈时恒为真
+        model_side = mcts is not None and (opponent is None or game.player == model_color)
         temperature = 1.0 if game.move_count < temp_moves else temp_final
-        forced = tactical_action(game) if tactical else None
+
+        action: int
+        pi: np.ndarray
+        # 强制手只作用于模型方：外部对手保持其原生行为，
+        # 这样生成的数据分布才与评测时的对手一致
+        forced = tactical_action(game) if (tactical and model_side) else None
         if forced is not None:
             pi = np.zeros(NUM_CELLS, dtype=np.float32)
             pi[forced] = 1.0
             action = forced
-        elif mcts is not None:
-            pi, action, _v = mcts.search(game, sims=sims, temperature=temperature, add_noise=True, rng=rng)
+        elif model_side:
+            pi, action, _v = mcts.search(game, sims=sims, temperature=temperature,
+                                         add_noise=root_noise, rng=rng)
         else:
-            tau = h_tau_open if game.move_count < temp_moves else h_tau
+            tau = opp_tau if opponent == "heuristic" else (
+                h_tau_open if game.move_count < temp_moves else h_tau)
             action, pi = heuristic_policy(game, tau=tau, topk=6, rng=rng)
 
-        states.append(game.encode())
-        pis.append(pi.astype(np.float32))
-        players.append(game.player)
+        # 只收模型方的样本：对手的 pi 是弱策略，混进去会拉低教材水平
+        if opponent is None or not keep_model_side or game.player == model_color:
+            states.append(game.encode())
+            pis.append(pi.astype(np.float32))
+            players.append(game.player)
         game.play(action)
 
     if not game.finished:                      # 超过最大步数：按平局处理
@@ -135,7 +161,12 @@ def generate(
     if verbose:
         print(f"  自对弈设备: {device_str or '自动（单进程）'}", flush=True)
 
-    tasks = [(model_path, seed + i, kwargs, device_str) for i in range(games)]
+    tasks = []
+    for i in range(games):
+        kw = dict(kwargs)
+        if kw.get("model_color") == "alternate":
+            kw["model_color"] = 1 if i % 2 == 0 else 2      # 执黑执白各半，避免样本偏色
+        tasks.append((model_path, seed + i, kw, device_str))
     all_states: List[np.ndarray] = []
     all_pis: List[np.ndarray] = []
     all_z: List[float] = []
@@ -246,6 +277,16 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--heuristic-scale", type=float, default=3000.0)
     p.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "cuda"],
                    help="自对弈推理设备。cuda 时用 GPU（建议同时把 --batch-size 调大到 32-64）")
+    p.add_argument("--opponent", type=str, default="none", choices=["none", "heuristic"],
+                   help="对手策略：none=纯自对弈；heuristic=让模型与启发式对战产教材")
+    p.add_argument("--model-color", type=str, default="alternate", choices=["alternate", "black", "white"],
+                   help="模型执子方（--opponent 非 none 时生效）；alternate=逐局交替")
+    p.add_argument("--keep", type=str, default="model", choices=["model", "both"],
+                   help="收集哪一方样本：model=只收模型方（推荐，对手的 pi 是弱策略）")
+    p.add_argument("--opp-tau", type=float, default=0.0,
+                   help="启发式对手温度（0=完全贪心，与 evaluate.py 评测口径一致）")
+    p.add_argument("--no-root-noise", action="store_true",
+                   help="关闭根节点 Dirichlet 噪声（对战外部对手时必须加，否则模型被噪声削弱、数据记的是臭棋）")
     p.add_argument("--opening-plies", type=int, default=2, help="开局随机手数")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--out", type=str, default=os.path.join(root, "data", "selfplay.npz"))
@@ -266,13 +307,20 @@ def main() -> None:
         opening_plies=args.opening_plies,
         heuristic_weight=args.heuristic_value_weight,
         heuristic_scale=args.heuristic_scale,
+        opponent=(None if args.opponent == "none" else args.opponent),
+        model_color={"alternate": "alternate", "black": 1, "white": 2}[args.model_color],
+        keep_model_side=(args.keep == "model"),
+        opp_tau=args.opp_tau,
+        root_noise=(not args.no_root_noise),
     )
     device = None
     if args.device == "cpu":
         device = torch.device("cpu")
     elif args.device == "cuda":
         device = torch.device("cuda")
-    print(f"自对弈: {args.games} 局, 策略={args.policy}, sims={args.sims}, workers={args.workers}, device={args.device}")
+    mode = "自对弈" if args.opponent == "none" else f"对战 {args.opponent}(tau={args.opp_tau})"
+    print(f"{mode}: {args.games} 局, 策略={args.policy}, sims={args.sims}, "
+          f"workers={args.workers}, device={args.device}, 执子={args.model_color}, 收集={args.keep}")
     data = generate(model_path=args.model, games=args.games, workers=args.workers, seed=args.seed,
                     device=device, **kwargs)
     save_dataset(args.out, data)

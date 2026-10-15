@@ -1,0 +1,12 @@
+共 3 个数据文件
+  载入 ../data/vs_heur_2k.npz: 50971 条
+  载入 ../data/know_v2_400.npz: 58049 条
+  载入 ../data/heur2000_6w.npz: 60000 条
+样本总数: 169020  (胜方样本占比 0.280, 平均 |z|=0.681)
+模型参数量: 1,160,298
+混合精度(AMP): 开启
+epoch 1/4 20s | policy 2.3885 value 0.4124 acc 0.444 | val policy 2.3452 value 0.3938 acc 0.455 | lr 1.80e-04
+epoch 2/4 19s | policy 2.3549 value 0.3694 acc 0.447 | val policy 2.3254 value 0.3587 acc 0.451 | lr 1.13e-04
+epoch 3/4 19s | policy 2.3344 value 0.3382 acc 0.451 | val policy 2.3126 value 0.3369 acc 0.459 | lr 4.06e-05
+epoch 4/4 19s | policy 2.3215 value 0.3229 acc 0.455 | val policy 2.3129 value 0.3272 acc 0.455 | lr 1.00e-05
+模型已保存: ../models/v2/v2_2b.pt / /home/pingtaibu_2/work/CodeBuddy/Connect5/models/v2/latest.pt

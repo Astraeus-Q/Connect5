@@ -3,11 +3,16 @@ __pycache__/
 *.py[cod]
 
 # 训练产物（可由 pipeline 重新生成）
-# 训练过程日志不进仓库
+# 散落在根目录的日志不进仓库
 *.log
 
-# 但评估报告是有价值的记录，保留
-!evaluations/*.log
+# 但归档在 logs/ 下的训练、数据生成、评估报告是有价值的记录，保留
+!logs/train/*.log
+!logs/selfplay/*.log
+!logs/eval/*.log
+
+# 后端服务的运行时日志不保留
+logs/service/
 
 data/*.npz
 data/*.jsonl

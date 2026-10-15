@@ -1,0 +1,35 @@
+=== 数据 10:10:34 ===
+共 1 个数据文件
+  载入 ../data/heur_g3k.npz: 230040 条
+样本总数: 230040  (胜方样本占比 0.232, 平均 |z|=0.455)
+模型参数量: 1,160,298
+混合精度(AMP): 开启
+epoch 1/8 30s | policy 4.4212 value 0.4043 acc 0.082 | val policy 2.9296 value 0.3734 acc 0.354 | lr 9.85e-04
+epoch 2/8 28s | policy 1.9128 value 0.3697 acc 0.529 | val policy 1.4787 value 0.3802 acc 0.596 | lr 9.00e-04
+epoch 3/8 31s | policy 1.1955 value 0.3555 acc 0.651 | val policy 1.1810 value 0.3672 acc 0.643 | lr 7.51e-04
+epoch 4/8 29s | policy 0.9509 value 0.3407 acc 0.702 | val policy 0.9534 value 0.3453 acc 0.702 | lr 5.64e-04
+epoch 5/8 28s | policy 0.8184 value 0.3310 acc 0.733 | val policy 0.8099 value 0.3199 acc 0.736 | lr 3.71e-04
+epoch 6/8 27s | policy 0.7142 value 0.3133 acc 0.761 | val policy 0.7327 value 0.3152 acc 0.753 | lr 2.03e-04
+epoch 7/8 28s | policy 0.6516 value 0.3007 acc 0.780 | val policy 0.6799 value 0.2892 acc 0.763 | lr 9.00e-05
+epoch 8/8 29s | policy 0.6092 value 0.2893 acc 0.791 | val policy 0.6477 value 0.2876 acc 0.776 | lr 5.00e-05
+模型已保存: ../models/v2/v4a.pt / /home/pingtaibu_2/work/CodeBuddy/Connect5/models/v2/latest.pt
+=== v4a done 10:14:28 ===
+共 2 个数据文件
+  载入 ../data/heur_g3k.npz: 230040 条
+  载入 ../data/know600.npz: 65140 条
+样本总数: 295180  (胜方样本占比 0.283, 平均 |z|=0.560)
+模型参数量: 1,160,298
+混合精度(AMP): 开启
+epoch 1/8 39s | policy 4.5559 value 0.4940 acc 0.079 | val policy 3.2539 value 0.5143 acc 0.332 | lr 9.85e-04
+epoch 2/8 35s | policy 2.4755 value 0.4526 acc 0.448 | val policy 2.1617 value 0.4711 acc 0.506 | lr 9.00e-04
+epoch 3/8 35s | policy 1.9460 value 0.4347 acc 0.539 | val policy 1.9313 value 0.4410 acc 0.551 | lr 7.51e-04
+epoch 4/8 35s | policy 1.7516 value 0.4192 acc 0.578 | val policy 1.7526 value 0.4231 acc 0.583 | lr 5.64e-04
+epoch 5/8 35s | policy 1.6376 value 0.4019 acc 0.604 | val policy 1.6544 value 0.4256 acc 0.604 | lr 3.71e-04
+epoch 6/8 35s | policy 1.5556 value 0.3825 acc 0.624 | val policy 1.5749 value 0.3852 acc 0.619 | lr 2.03e-04
+epoch 7/8 35s | policy 1.4964 value 0.3631 acc 0.639 | val policy 1.5310 value 0.3710 acc 0.633 | lr 9.00e-05
+epoch 8/8 35s | policy 1.4617 value 0.3486 acc 0.649 | val policy 1.5141 value 0.3603 acc 0.637 | lr 5.00e-05
+模型已保存: ../models/v2/v4b.pt / /home/pingtaibu_2/work/CodeBuddy/Connect5/models/v2/latest.pt
+=== v4b done 10:19:15 ===
+v4a: 结果: 胜 111 / 负 344 / 平 45  胜率 0.244  得分率 0.267
+v4b: 结果: 胜 102 / 负 355 / 平 43  胜率 0.223  得分率 0.247
+=== ALL DONE 10:21:57 ===

@@ -104,7 +104,7 @@ def parse_args() -> argparse.Namespace:
     here = os.path.dirname(os.path.abspath(__file__))
     root = os.path.dirname(here)
     p = argparse.ArgumentParser(description="评估五子棋模型棋力")
-    p.add_argument("--model", type=str, default=os.path.join(root, "models", "latest.pt"))
+    p.add_argument("--model", type=str, default=os.path.join(root, "models", "v1", "latest.pt"))
     p.add_argument("--vs", type=str, default="heuristic", choices=["random", "heuristic", "network", "mcts"])
     p.add_argument("--vs-model", type=str, default=None, help="对手模型（vs=network/mcts 时必填）")
     p.add_argument("--kind", type=str, default="mcts", choices=["mcts", "network"], help="被测模型的行棋方式")

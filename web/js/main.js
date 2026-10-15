@@ -19,6 +19,7 @@
     humanColor: 1,
     level: 'normal',
     aiKind: 'net',
+    infer: 'local',
     history: [],
     over: false,
     winner: 0,
@@ -46,6 +47,7 @@
 
     bindSeg('modeSeg', 'mode', (v) => { state.mode = v; syncControls(); newGame(); });
     bindSeg('oppSeg', 'opp', (v) => { state.aiKind = v; syncControls(); });
+    bindSeg('inferSeg', 'infer', (v) => { state.infer = v; syncControls(); });
     bindSeg('levelSeg', 'level', (v) => { state.level = v; });
     bindSeg('colorSeg', 'color', (v) => { state.humanColor = Number(v); newGame(); });
 
@@ -60,6 +62,7 @@
 
     renderHistory();
     loadWeights();
+    detectBackend();
     syncControls();
     newGame();
   }
@@ -92,6 +95,17 @@
 
     Array.prototype.forEach.call(el('oppSeg').querySelectorAll('button'), (b) => { b.disabled = disabled; });
     el('oppSeg').style.opacity = disabled ? 0.45 : 1;
+
+    // 服务器推理只服务神经 AI；后端没起来时禁用该选项
+    const serverBtn = el('inferSeg').querySelector('button[data-infer="server"]');
+    const canServer = !disabled && state.aiKind === 'net' && window.GomokuBackend.available;
+    if (serverBtn) {
+      serverBtn.disabled = !canServer;
+      serverBtn.title = window.GomokuBackend.available
+        ? `后端模型: ${backendVersion() || '未知'}`
+        : '未检测到后端服务（python3 ai/server.py）';
+    }
+    el('inferSeg').style.opacity = disabled || state.aiKind === 'heuristic' ? 0.45 : 1;
 
     // 启发式对手不做搜索，强度档位对它无意义
     const levelOff = state.mode === 'pvp' || state.aiKind === 'heuristic';
@@ -155,6 +169,28 @@
     return false;
   }
 
+  /** 是否走后端服务（v2 系残差模型跑不动本地 JS，只能由后端提供） */
+  function useBackend() {
+    return state.infer === 'server' && window.GomokuBackend.available && state.aiKind === 'net';
+  }
+
+  /** 页面启动时探测后端；可用则默认切到「服务器推理」 */
+  async function detectBackend() {
+    const ok = await window.GomokuBackend.check();
+    if (ok) {
+      state.infer = 'server';
+      const seg = el('inferSeg');
+      Array.prototype.forEach.call(seg.querySelectorAll('button'), (b) => {
+        b.classList.toggle('active', b.dataset.infer === 'server');
+      });
+      const info = window.GomokuBackend.info || {};
+      console.log('后端已连接:', info.model, '| 默认 sims', info.default_sims);
+    }
+    updateBadge();
+    syncControls();
+    updateStatus();
+  }
+
   function maybeAi() {
     if (state.over || state.replay) return;
     if (!isAiTurn()) {
@@ -174,18 +210,43 @@
     const token = state.token;
     state.busy = true;
     if (!heuristic) showThink(0, cfg.sims);
+    const viaBackend = useBackend();
     let res;
     try {
-      res = await state.ai.think(state.board, state.player, {
-        sims: cfg.sims,
-        noise: cfg.noise,
-        temperature: cfg.temperature,
-        timeBudgetMs: cfg.budgetMs,
-        chunk: 4,
-        forceHeuristic: heuristic,
-        tau: 0,
-        onProgress: (done, total) => { if (token === state.token) showThink(done, total); },
-      });
+      if (viaBackend) {
+        const out = await window.GomokuBackend.move(state.board, state.player, cfg.sims, cfg.temperature);
+        res = {
+          action: out.action,
+          policy: out.policy ? Float32Array.from(out.policy) : null,
+          value: out.value,
+          sims: out.sims,
+          mode: out.mode === 'tactical' ? 'tactical' : 'backend',
+          timeMs: out.timeMs,
+        };
+      } else {
+        res = await state.ai.think(state.board, state.player, {
+          sims: cfg.sims,
+          noise: cfg.noise,
+          temperature: cfg.temperature,
+          timeBudgetMs: cfg.budgetMs,
+          chunk: 4,
+          forceHeuristic: heuristic,
+          tau: 0,
+          onProgress: (done, total) => { if (token === state.token) showThink(done, total); },
+        });
+      }
+    } catch (err) {
+      // 后端挂了/超时：自动回退本地推理，不打断对局
+      console.warn('后端推理失败，回退本地:', err && err.message);
+      if (viaBackend) {
+        window.GomokuBackend.available = false;
+        state.infer = 'local';
+        syncControls();
+        res = await state.ai.think(state.board, state.player, {
+          sims: cfg.sims, noise: cfg.noise, temperature: cfg.temperature,
+          timeBudgetMs: cfg.budgetMs, chunk: 4, forceHeuristic: heuristic, tau: 0,
+        });
+      }
     } finally {
       state.busy = false;
       hideThink();
@@ -296,7 +357,7 @@
       }
     } else {
       const side = state.player === 1 ? '黑方' : '白方';
-      const kindText = state.aiKind === 'heuristic' ? '启发式 AI' : 'AI';
+      const kindText = state.aiKind === 'heuristic' ? '启发式 AI' : (useBackend() ? '服务器 AI' : 'AI');
       if (state.mode === 'pve') {
         text = state.player === state.humanColor ? `轮到你落子（${side}）` : `${kindText} 思考中（${side}）`;
       } else if (state.mode === 'eva') {
@@ -325,7 +386,13 @@
   }
 
   function renderAnalysis(res) {
-    el('aiModeText').textContent = res.mode === 'tactical' ? '战术强制手' : (res.mode === 'mcts' ? 'MCTS 搜索' : '启发式');
+    const modeText = {
+      tactical: '战术强制手',
+      mcts: 'MCTS 搜索',
+      backend: '后端推理（' + (backendVersion() || '服务器') + '）',
+      heuristic: '启发式规则',
+    };
+    el('aiModeText').textContent = modeText[res.mode] || res.mode || '--';
     el('kvNodes').textContent = res.sims ? res.sims + ' 次模拟' : '--';
     el('kvTime').textContent = res.timeMs ? Math.round(res.timeMs) + ' ms' : '--';
     if (res.value !== null && res.value !== undefined) {
@@ -551,7 +618,8 @@
     state.meta = loaded.meta || {};
     state.ai.setNetwork(loaded.net);
     const it = state.meta.iteration;
-    setBadge('ok', `模型${typeof it === 'number' ? ' iter' + it : '已加载'} · ${loaded.arch.channels}ch×${loaded.arch.n_blocks}层`);
+    state.badgeLocal = `模型${typeof it === 'number' ? ' iter' + it : '已加载'} · ${loaded.arch.channels}ch×${loaded.arch.n_blocks}层`;
+    updateBadge();
     const total = Object.values(loaded.net.w).reduce((a, w) => a + w.length, 0);
     el('modelInfo').innerHTML = [
       ['架构', `${loaded.arch.in_channels}→${loaded.arch.channels}ch × ${loaded.arch.n_blocks} 层卷积`],
@@ -565,6 +633,23 @@
   function setBadge(kind, text) {
     el('modelBadge').className = 'model-badge ' + kind;
     el('modelBadgeText').textContent = text;
+  }
+
+  /** 从后端返回的模型路径提取版本名：../models/v2/v2_2.pt -> v2.2
+   *  这样后端 /reload 换了模型，网页标注会自动跟着变，不用改前端代码。 */
+  function backendVersion() {
+    const p = String((window.GomokuBackend.info || {}).model || '');
+    const base = p.split('/').pop().replace(/\.pt$/, '');   // ../models/v2/v2_2.pt -> v2_2
+    const m = base.match(/^(v\d+(?:_\d+)?)/);               // 只从文件名开头匹配，避免匹配到目录 v2
+    return m ? m[1].replace(/_/g, '.') : '';
+  }
+
+  /** 徽章同时体现两条线：本地权重（v1 系）+ 后端服务（当前实际加载的版本） */
+  function updateBadge() {
+    if (!state.badgeLocal) return;
+    const ver = backendVersion();
+    const suffix = window.GomokuBackend.available ? ' · 服务器 ' + (ver || '后端') : '';
+    setBadge('ok', state.badgeLocal + suffix);
   }
 
   function escapeHtml(s) {

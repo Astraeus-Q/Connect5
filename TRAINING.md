@@ -30,7 +30,7 @@ cd /home/pingtaibu_2/work/CodeBuddy/Connect5/ai
 | 步骤 | 命令 | 产出 |
 | --- | --- | --- |
 | 自对弈 | `selfplay.py` | `data/iter{N}.npz`（局面 + 落子分布 + 胜负） |
-| 训练 | `train.py` | `models/iter{N}.pt` 和 `models/latest.pt` |
+| 训练 | `train.py` | `models/iter{N}.pt` 和 `models/v1/latest.pt` |
 | 导出 | `export.py` | `web/models/weights.json`（网页 AI 的大脑） |
 | 评估 | `evaluate.py` | 打印胜率（不产生文件） |
 
@@ -60,7 +60,7 @@ python3 pipeline.py --iters 7 --games 150 --sims 64 --epochs 3 --workers 12 --ev
 
 - 第 0 轮用启发式自对弈冷启动，第 1~6 轮用 MCTS 自对弈
 - 每轮结束自动导出 + 评估
-- 想后台跑：`nohup python3 pipeline.py ... > ../train.log 2>&1 &`，然后 `tail -f ../train.log`
+- 想后台跑：`nohup python3 pipeline.py ... > ../logs/train/pipeline.log 2>&1 &`，然后 `tail -f ../logs/train/pipeline.log`
 
 常用参数：
 
@@ -89,7 +89,7 @@ python3 selfplay.py --policy heuristic --games 300 --workers 12 --seed 0 --out .
 python3 train.py --data ../data/iter0.npz --epochs 3 --lr 1e-3 --out ../models/iter0.pt --iteration 0
 
 # ③ MCTS 自对弈（第 1 轮，约 8 分钟）
-python3 selfplay.py --model ../models/latest.pt --policy mcts \
+python3 selfplay.py --model ../models/v1/latest.pt --policy mcts \
         --games 150 --workers 12 --sims 64 --seed 1000 --out ../data/iter1.npz
 
 # ④ 在 iter0+iter1 上训练
@@ -127,20 +127,20 @@ python3 evaluate.py --model /tmp/smoke.pt --vs random --games 4 --sims 8
 
 ```bash
 # 用 v1 当起点，开知识增强搜索生成数据（600 局，约 10 分钟）
-python3 selfplay.py --model ../models/v1.pt --policy mcts \
+python3 selfplay.py --model ../models/v1/v1.pt --policy mcts \
         --games 600 --workers 12 --sims 64 --seed 777 \
         --heuristic-value-weight 0.5 --out ../data/know600.npz
 
 # 蒸馏训练
 python3 train.py \
         --data ../data/know600.npz ../data/heur2000.npz \
-        --init ../models/v1.pt --epochs 5 --lr 5e-4 --out ../models/v2.pt --iteration 2
+        --init ../models/v1/v1.pt --epochs 5 --lr 5e-4 --out ../models/v1/v1_2.pt --iteration 2
 
 # 评估（30 局更稳）
-python3 evaluate.py --model ../models/v2.pt --vs heuristic --games 30 --sims 64 --seed 1
+python3 evaluate.py --model ../models/v1/v1_2.pt --vs heuristic --games 30 --sims 64 --seed 1
 
-# 比 v1 的 21.7% 好就导出
-python3 export.py --model ../models/v2.pt --out ../web/models/weights.json --iteration 2 --tag v2
+# 比 v1 的 28.0% 好就导出
+python3 export.py --model ../models/v1/v1_2.pt --out ../web/models/weights.json --iteration 2 --tag v2
 ```
 
 > 说明：这条路线是我最后加的，**尚未实测胜率**（脚本改动只做过小规模运行验证）。
@@ -162,7 +162,7 @@ python3 import_games.py --input ../data/human/connect5-training.json \
 
 ```bash
 python3 train.py --data ../data/iter3.npz ../data/human.npz \
-                 --init ../models/latest.pt --epochs 2 --lr 3e-4 --out ../models/final_h.pt
+                 --init ../models/v1/latest.pt --epochs 2 --lr 3e-4 --out ../models/final_h.pt
 ```
 
 ---
@@ -206,7 +206,7 @@ python3 train.py --data ../data/iter3.npz ../data/human.npz \
 ## 5. 怎么判断模型变强了
 
 ```bash
-python3 evaluate.py --model ../models/latest.pt --vs heuristic --games 30 --sims 64 --seed 1
+python3 evaluate.py --model ../models/v1/latest.pt --vs heuristic --games 30 --sims 64 --seed 1
 ```
 
 输出示例：
@@ -260,7 +260,7 @@ python3 evaluate.py --model ../models/latest.pt --vs heuristic --games 30 --sims
    20 万样本加载后约占 500 MB+，样本再翻倍时注意内存。
 
 6. **日志文件**
-   `train.log`、`step*.log` 都是过程日志，随时可删，不影响训练。
+   日志统一写在 `logs/` 下（train / selfplay / eval / service），随时可删，不影响训练。
 
 ---
 
@@ -273,22 +273,30 @@ python3 evaluate.py --model ../models/latest.pt --vs heuristic --games 30 --sims
 | 路径 | 内容 |
 | --- | --- |
 | `data/heur2000.npz` | 启发式自对弈 2000 局，**19.8 万样本**，v1 的主要教材 |
-| `models/v1.pt` | 当前模型：用 heur2000 从头训 6 epoch |
-| `models/latest.pt` | 等于 v1（`train.py` 总会自动更新它，pipeline 靠它做 `--init`） |
-| `web/models/weights.json` | 已导出为 v1（`meta.iteration = 1`） |
+| `models/v1/v1.pt` | v1 基线：20 万参数，用 heur2000 从头训 6 epoch |
+| `models/v1/v1_1.pt` | v1.1：加了知识增强搜索教材微调 |
+| `models/v1/latest.pt` | v1 系列的最新（`train.py` 自动更新，pipeline 靠它做 `--init`） |
+| `models/v2/v2.pt` | **v2（当前最佳）**：116 万参数，96ch × 6 残差 |
+| `models/v2/v2_1_test_capacity.pt` | v2.1_test_capacity：253 万参数，实验品，已证伪不采用 |
+| `web/models/weights.json` | 网页权重（v1 系列专用，v2 是残差结构无法导出） |
 
-**当前最佳：v1.1**（对手：启发式贪心，30 局，seed=2026）
+> **两条线互不干扰**：`train.py` 会把 `latest.pt` 写在 `--out` 所在目录，
+> 且架构不匹配时拒绝覆盖；`pipeline.py` 用 `--model-dir` 选择跑哪条线（默认 v1）。
 
-| 难度 | sims | v1 | **v1.1** |
-| --- | --- | --- | --- |
-| 简单 | 16 | 28.3% | **33.3%** |
-| 普通 | 64 | 25.0% | **36.7%** |
-| 困难 | 240 | 25.0% | **36.7%** |
-| vs 随机 | 32 | 100% | **100%** |
+**当前最佳：v2**（对手：启发式贪心，**100 局**，seed=2026）
 
-指标对比（1 万条真实样本实测）：value loss 0.556 → **0.517**，策略 acc 0.398 → **0.416**。
+| 模型 | 参数量 | value loss | acc | vs 启发式 |
+| --- | --- | --- | --- | --- |
+| v1 | 20 万 | 0.556 | 0.398 | 25.0% |
+| v1.1 | 20 万 | 0.517 | 0.416 | 28.0% |
+| **v2** | **116 万** | **0.340** | 0.437 | **29.0%** ✅ |
+| v2.1_test_capacity | 253 万 | 0.391 | 0.451 | 26.0% |
 
-**判断基准**：新模型在**普通档（sims=64，30 局）得分率 > 36.7%** 才值得 `export.py` 覆盖网页权重。
+> ⚠️ 曾用 30 局测出 v1.1 是 36.7%，**100 局重测只有 28.0%**。
+> 30 局的标准误约 ±9%，不足以判定提升——以后一律 100 局起。
+
+**判断基准**：新模型在 **100 局**对战中得分率 **> 29.0%** 才值得 `export.py` 覆盖网页权重。
+（注意 v2 是残差结构，无法导出到浏览器；能导出的只有 v1 系列。）
 注意 30 局仍有 ±5% 噪声（同一模型换 seed 曾测出 21.7% 与 25.0%），接近时换 seed 复测一次再决定。
 
 完整记录见 [MODEL_HISTORY.md](MODEL_HISTORY.md)——每训出一代就往里追加一节。
@@ -306,10 +314,10 @@ python3 pipeline.py --start 2 --iters 6 --games 150 --sims 64 \
         --extra-data ../data/heur2000.npz
 ```
 
-- `--start 2`：跳过冷启动轮，直接 MCTS 自对弈，并自动 `--init models/latest.pt`（也就是 v1）
+- `--start 2`：跳过冷启动轮，直接 MCTS 自对弈，并自动 `--init models/v1/latest.pt`（也就是 v1）
 - `--extra-data ../data/heur2000.npz`：把棋型数据**永久钉在训练集里**，不会再被窗口挤掉
   （这正是上一轮 7 轮白跑的根因）
 - `--replay-window 8`：自对弈数据也全程保留
 
 想另起炉灶走路线 A；想试更强的搜索教材走路线 D。
-不管哪条，**每轮结束都跑 `evaluate.py`，得分率超过 v1 的 21.7% 再 `export.py`**。
+不管哪条，**每轮结束都跑 `evaluate.py`，得分率超过 v1 的 28.0% 再 `export.py`**。

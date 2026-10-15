@@ -1,0 +1,18 @@
+=== v3h 纯heur2000 从头训 10:02:25 ===
+共 1 个数据文件
+  载入 ../data/heur2000.npz: 197889 条
+样本总数: 197889  (胜方样本占比 0.182, 平均 |z|=0.360)
+模型参数量: 1,160,298
+混合精度(AMP): 开启
+epoch 1/8 26s | policy 4.5577 value 0.3577 acc 0.060 | val policy 3.3380 value 0.3617 acc 0.281 | lr 9.85e-04
+epoch 2/8 24s | policy 2.2081 value 0.3488 acc 0.467 | val policy 1.6339 value 0.3486 acc 0.577 | lr 9.00e-04
+epoch 3/8 24s | policy 1.3375 value 0.3395 acc 0.608 | val policy 1.1804 value 0.3366 acc 0.660 | lr 7.51e-04
+epoch 4/8 24s | policy 1.0730 value 0.3303 acc 0.662 | val policy 1.0650 value 0.3294 acc 0.649 | lr 5.64e-04
+epoch 5/8 24s | policy 0.9436 value 0.3235 acc 0.694 | val policy 0.9346 value 0.3199 acc 0.709 | lr 3.71e-04
+epoch 6/8 24s | policy 0.8552 value 0.3169 acc 0.719 | val policy 0.8609 value 0.3159 acc 0.719 | lr 2.03e-04
+epoch 7/8 24s | policy 0.7974 value 0.3106 acc 0.735 | val policy 0.8143 value 0.3108 acc 0.725 | lr 9.00e-05
+epoch 8/8 24s | policy 0.7662 value 0.3067 acc 0.747 | val policy 0.7980 value 0.3080 acc 0.733 | lr 5.00e-05
+模型已保存: ../models/v2/v3h.pt / /home/pingtaibu_2/work/CodeBuddy/Connect5/models/v2/latest.pt
+=== 评估 10:05:42 ===
+结果: 胜 88 / 负 365 / 平 47  胜率 0.194  得分率 0.223
+=== DONE 10:07:03 ===

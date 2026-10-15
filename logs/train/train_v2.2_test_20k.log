@@ -1,0 +1,13 @@
+已保存 1509115 条样本 -> ../data/heur_g20k.npz
+=== 数据 12:56:28 ===
+共 1 个数据文件
+  载入 ../data/heur_g20k.npz: 1509115 条
+样本总数: 1509115  (胜方样本占比 0.226, 平均 |z|=0.443)
+模型参数量: 1,160,298
+混合精度(AMP): 开启
+epoch 1/3 187s | policy 1.7500 value 0.3439 acc 0.559 | val policy 0.7634 value 0.3192 acc 0.742 | lr 8.06e-04
+epoch 2/3 189s | policy 0.6205 value 0.3066 acc 0.780 | val policy 0.5601 value 0.3761 acc 0.797 | lr 3.11e-04
+epoch 3/3 189s | policy 0.4652 value 0.2845 acc 0.826 | val policy 0.4388 value 0.2785 acc 0.834 | lr 5.00e-05
+模型已保存: ../models/v2/v8.pt / /home/pingtaibu_2/work/CodeBuddy/Connect5/models/v2/latest.pt
+v8: 结果: 胜 107 / 负 344 / 平 49  胜率 0.237  得分率 0.263
+=== DONE 13:07:26 ===

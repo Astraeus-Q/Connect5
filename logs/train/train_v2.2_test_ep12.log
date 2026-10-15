@@ -1,0 +1,20 @@
+共 1 个数据文件
+  载入 ../data/heur_g10k.npz: 759400 条
+样本总数: 759400  (胜方样本占比 0.226, 平均 |z|=0.443)
+模型参数量: 1,160,298
+混合精度(AMP): 开启
+epoch 1/12 88s | policy 2.9800 value 0.3665 acc 0.344 | val policy 1.1913 value 0.3469 acc 0.647 | lr 9.97e-04
+epoch 2/12 85s | policy 0.9077 value 0.3290 acc 0.708 | val policy 0.8552 value 0.3331 acc 0.716 | lr 9.65e-04
+epoch 3/12 85s | policy 0.7057 value 0.3127 acc 0.757 | val policy 0.6927 value 0.3830 acc 0.761 | lr 9.00e-04
+epoch 4/12 85s | policy 0.6162 value 0.3001 acc 0.782 | val policy 0.6213 value 0.3162 acc 0.781 | lr 8.06e-04
+epoch 5/12 85s | policy 0.5559 value 0.2849 acc 0.798 | val policy 0.5584 value 0.3090 acc 0.798 | lr 6.92e-04
+epoch 6/12 85s | policy 0.5103 value 0.2663 acc 0.813 | val policy 0.5201 value 0.2670 acc 0.806 | lr 5.64e-04
+epoch 7/12 85s | policy 0.4671 value 0.2481 acc 0.825 | val policy 0.4673 value 0.2431 acc 0.825 | lr 4.34e-04
+epoch 8/12 85s | policy 0.4275 value 0.2298 acc 0.837 | val policy 0.4309 value 0.2266 acc 0.836 | lr 3.11e-04
+epoch 9/12 85s | policy 0.3921 value 0.2134 acc 0.849 | val policy 0.3984 value 0.2121 acc 0.848 | lr 2.03e-04
+epoch 10/12 85s | policy 0.3625 value 0.2002 acc 0.858 | val policy 0.3741 value 0.1980 acc 0.856 | lr 1.20e-04
+epoch 11/12 85s | policy 0.3400 value 0.1895 acc 0.866 | val policy 0.3613 value 0.1920 acc 0.859 | lr 6.79e-05
+epoch 12/12 85s | policy 0.3269 value 0.1838 acc 0.871 | val policy 0.3500 value 0.1914 acc 0.863 | lr 5.00e-05
+模型已保存: ../models/v2/v7.pt / /home/pingtaibu_2/work/CodeBuddy/Connect5/models/v2/latest.pt
+v7: 结果: 胜 130 / 负 330 / 平 40  胜率 0.283  得分率 0.300
+=== DONE 11:58:42 ===

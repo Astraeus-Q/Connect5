@@ -11,7 +11,8 @@
 ```
 Connect5/
 ├── TRAINING.md              # 训练全流程说明（手动分步、参数速查、避坑）
-├── MODEL_HISTORY.md         # 模型演进史：每一代的训练配方与实战成绩
+├── MODEL_HISTORY.md         # 正式版本演进史：每一代正式版的训练配方与实战成绩
+├── EXPERIMENTS.md           # 实验记录：所有 *_test 实验版本（正式版不在此）
 ├── ai/                      # 训练侧（Python + PyTorch）
 │   ├── gomoku.py            #   规则引擎、特征编码、启发式基线
 │   ├── model.py             #   策略-价值网络（BN 可融合导出）
@@ -33,10 +34,44 @@ Connect5/
 │   ├── js/storage.js        #   localStorage 对局记录、导入导出
 │   ├── js/main.js           #   主流程
 │   └── models/weights.json  #   训练导出的权重（AI 的大脑）
-├── data/                    # 自对弈与人类对局数据（npz / jsonl）
-├── models/                  # 训练 checkpoint
-└── train.log                # 训练日志
+├── data/                    # 训练数据（npz / jsonl）
+├── models/
+│   ├── v1/                  # v1 系列正式版（20 万参数 → 浏览器推理）
+│   ├── v2/                  # v2 系列正式版（116 万参数 → 后端推理）
+│   └── experiments/         # ★ 所有实验版本权重（*_test / *_repro）
+├── logs/                    # 所有运行日志，按类型分目录
+│   ├── train/               #   训练      train_<版本>.log
+│   ├── selfplay/            #   数据生成  selfplay_<产物>.log
+│   ├── eval/                #   评估报告  <版本>-vs-<对手>.log
+│   └── service/             #   后端服务  server.log
+└── docs/                    # 文档配图
 ```
+
+### 文件摆放规范
+
+跑任何脚本，产物都要落到对应目录，**不要散落在项目根目录**：
+
+| 产物 | 目录 | 命名 |
+| --- | --- | --- |
+| 训练日志 | `logs/train/` | `train_<版本>.log` |
+| 数据生成日志 | `logs/selfplay/` | `selfplay_<产物>.log` |
+| 评估报告 | `logs/eval/` | `<版本>-vs-<对手>.log` |
+| 服务日志 | `logs/service/` | `server.log` |
+| 训练数据 | `data/` | `<来源>_<规模>.npz` |
+| 正式版权重 | `models/<系列>/` | `v2_2.pt`（与版本名对应） |
+| **实验版权重** | **`models/experiments/`** | `v2_2_test_xxx.pt` |
+
+对应的命令写法：
+
+```bash
+cd ai
+python3 train.py    ... 2>&1 | tee ../logs/train/train_v2.3_test_xxx.log
+python3 selfplay.py ... > ../logs/selfplay/selfplay_xxx.log 2>&1 &
+python3 evaluate.py ... > ../logs/eval/vN-vs-heuristic.log  2>&1 &
+```
+
+版本命名（正式版 / 实验版）见
+[MODEL_HISTORY.md](MODEL_HISTORY.md) 开头的「📐 版本命名规范」。
 
 ## 快速开始
 
@@ -88,7 +123,7 @@ python3 pipeline.py --iters 7 --games 150 --sims 64 --epochs 3 --workers 12 --ev
 python3 selfplay.py --policy heuristic --games 300 --workers 12 --out ../data/iter0.npz
 python3 train.py --data ../data/iter0.npz --epochs 3 --out ../models/iter0.pt
 python3 export.py --model ../models/iter0.pt --out ../web/models/weights.json
-python3 evaluate.py --model ../models/latest.pt --vs heuristic --games 20 --sims 64
+python3 evaluate.py --model ../models/v1/latest.pt --vs heuristic --games 20 --sims 64
 ```
 
 ### 3. 用人类对局反哺训练（数据闭环）
@@ -98,7 +133,7 @@ python3 evaluate.py --model ../models/latest.pt --vs heuristic --games 20 --sims
 
 ```bash
 python3 import_games.py --input ../data/human/connect5-training.json --out ../data/human.npz --winners-only
-python3 train.py --data ../data/heur2000.npz ../data/human.npz --init ../models/latest.pt --epochs 2 --lr 3e-4
+python3 train.py --data ../data/heur2000.npz ../data/human.npz --init ../models/v1/latest.pt --epochs 2 --lr 3e-4
 ```
 
 ### 4. 当前模型棋力（v1 实测）

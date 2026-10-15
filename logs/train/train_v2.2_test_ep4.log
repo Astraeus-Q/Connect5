@@ -1,0 +1,12 @@
+共 1 个数据文件
+  载入 ../data/heur_g10k.npz: 759400 条
+样本总数: 759400  (胜方样本占比 0.226, 平均 |z|=0.443)
+模型参数量: 1,160,298
+混合精度(AMP): 开启
+epoch 1/4 95s | policy 2.5105 value 0.3606 acc 0.421 | val policy 1.0771 value 0.3438 acc 0.665 | lr 9.00e-04
+epoch 2/4 94s | policy 0.8408 value 0.3244 acc 0.724 | val policy 0.7261 value 0.3387 acc 0.752 | lr 5.64e-04
+epoch 3/4 90s | policy 0.6290 value 0.3058 acc 0.779 | val policy 0.5888 value 0.3142 acc 0.793 | lr 2.03e-04
+epoch 4/4 91s | policy 0.5224 value 0.2890 acc 0.811 | val policy 0.5183 value 0.2870 acc 0.812 | lr 5.00e-05
+模型已保存: ../models/v2/v9.pt / /home/pingtaibu_2/work/CodeBuddy/Connect5/models/v2/latest.pt
+v9: 结果: 胜 127 / 负 334 / 平 39  胜率 0.275  得分率 0.293
+=== DONE 13:16:30 ===

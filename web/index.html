@@ -33,6 +33,10 @@
             <button type="button" data-opp="net" class="active">神经 AI</button>
             <button type="button" data-opp="heuristic">启发式 AI</button>
           </div>
+          <div class="seg" id="inferSeg" role="group" aria-label="推理位置">
+            <button type="button" data-infer="local" class="active">本地推理</button>
+            <button type="button" data-infer="server">服务器推理</button>
+          </div>
           <div class="seg" id="levelSeg" role="group" aria-label="AI 强度">
             <button type="button" data-level="easy">简单</button>
             <button type="button" data-level="normal" class="active">普通</button>
@@ -95,8 +99,8 @@
               <div><span class="k">耗时</span><span class="v" id="kvTime">--</span></div>
             </div>
             <div class="candidates" id="candidateList"></div>
-            <p class="hint">胜率来自价值头的估计：<b>你 / AI</b> 同时显示。当前模型（v1）value loss 0.47，
-              对极端局面的判断还不够准，仅作趋势参考。</p>
+            <p class="hint">胜率来自价值头的估计：<b>你 / AI</b> 同时显示。数值仅作趋势参考，
+              不是精确胜率；当前使用的模型版本见上方「模型」徽章。</p>
           </div>
           <div class="card">
             <div class="card-head"><h2>着法</h2><span class="muted" id="moveCount">0 手</span></div>
@@ -151,6 +155,7 @@
 
   <script src="js/rules.js"></script>
   <script src="js/nn.js"></script>
+  <script src="js/api.js"></script>
   <script src="js/ai.js"></script>
   <script src="js/board.js"></script>
   <script src="js/storage.js"></script>
