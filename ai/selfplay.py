@@ -73,6 +73,8 @@ def play_one(
     keep_model_side: bool = True,
     opp_tau: float = 0.0,
     root_noise: bool = True,
+    relabel: str = "none",
+    relabel_tau: float = 0.0,
 ) -> Tuple[List[np.ndarray], List[np.ndarray], List[int], int]:
     """下完一局，返回 (states, pis, players, winner)。
 
@@ -120,7 +122,12 @@ def play_one(
         # 只收模型方的样本：对手的 pi 是弱策略，混进去会拉低教材水平
         if opponent is None or not keep_model_side or game.player == model_color:
             states.append(game.encode())
-            pis.append(pi.astype(np.float32))
+            if relabel == "heuristic":
+                # DAgger：局面由模型自己走出来（真实分布），动作标签换成专家标注
+                _, pi_label = heuristic_policy(game, tau=relabel_tau)
+                pis.append(pi_label.astype(np.float32))
+            else:
+                pis.append(pi.astype(np.float32))
             players.append(game.player)
         game.play(action)
 
@@ -287,6 +294,10 @@ def parse_args() -> argparse.Namespace:
                    help="启发式对手温度（0=完全贪心，与 evaluate.py 评测口径一致）")
     p.add_argument("--no-root-noise", action="store_true",
                    help="关闭根节点 Dirichlet 噪声（对战外部对手时必须加，否则模型被噪声削弱、数据记的是臭棋）")
+    p.add_argument("--relabel", type=str, default="none", choices=["none", "heuristic"],
+                   help="DAgger 模式：局面仍由模型自己走出来，但动作标签换成专家标注")
+    p.add_argument("--relabel-tau", type=float, default=0.0,
+                   help="重新标注时专家的温度（0=one-hot 最优手，与 v2.2 教材一致）")
     p.add_argument("--opening-plies", type=int, default=2, help="开局随机手数")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--out", type=str, default=os.path.join(root, "data", "selfplay.npz"))
@@ -312,6 +323,8 @@ def main() -> None:
         keep_model_side=(args.keep == "model"),
         opp_tau=args.opp_tau,
         root_noise=(not args.no_root_noise),
+        relabel=args.relabel,
+        relabel_tau=args.relabel_tau,
     )
     device = None
     if args.device == "cpu":

@@ -1,0 +1,12 @@
+共 1 个数据文件
+  载入 ../data/dagger_10k.npz: 834866 条
+样本总数: 834866  (胜方样本占比 0.236, 平均 |z|=0.465)
+模型参数量: 1,160,298
+混合精度(AMP): 开启
+epoch 1/6 95s | policy 2.2903 value 0.4276 acc 0.465 | val policy 0.8040 value 0.4460 acc 0.736 | lr 9.65e-04
+epoch 2/6 94s | policy 0.6710 value 0.4025 acc 0.770 | val policy 0.5983 value 0.3975 acc 0.788 | lr 8.06e-04
+epoch 3/6 94s | policy 0.5090 value 0.3926 acc 0.817 | val policy 0.4800 value 0.3906 acc 0.826 | lr 5.64e-04
+epoch 4/6 94s | policy 0.4012 value 0.3838 acc 0.851 | val policy 0.3695 value 0.3839 acc 0.860 | lr 3.10e-04
+epoch 5/6 94s | policy 0.3226 value 0.3735 acc 0.878 | val policy 0.3074 value 0.3708 acc 0.882 | lr 1.20e-04
+epoch 6/6 93s | policy 0.2739 value 0.3646 acc 0.896 | val policy 0.2823 value 0.3675 acc 0.891 | lr 5.00e-05
+模型已保存: ../models/experiments/v2_3_test_dagger.pt / /home/pingtaibu_2/work/CodeBuddy/Connect5/models/experiments/latest.pt
